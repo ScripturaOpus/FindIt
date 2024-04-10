@@ -6,14 +6,11 @@ import (
 	"findit/verbose"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/sarpdag/boyermoore"
 )
-
-// test    test    test    test
 
 var foundItems uint64 // You never know. Could somehow be used.
 
@@ -44,7 +41,7 @@ func StartSearch() uint64 {
 		argparse.Config.ColorEnabled = false
 
 	default:
-		fmt.Printf("Unknown color setting '%s'", argparse.Config.ColorMode)
+		fmt.Printf("Unknown color setting '%s'\n", argparse.Config.ColorMode)
 		os.Exit(2)
 	}
 
@@ -75,39 +72,66 @@ func recurseSearch(path string) {
 }
 
 func checkFile(path string, search string) error {
+
+	if !matchesExt(path) {
+		return nil
+	}
+
+	isBin, err := isBinary(path)
+
+	if err != nil {
+		fmt.Println("Error detecting file:", err)
+	}
+
+	if (argparse.Config.OnlyBinaryFiles && !isBin) ||
+		(!argparse.Config.AllowBinaryFiles && isBin) {
+		return nil
+	}
+
 	file, err := os.Open(path)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
 		return err
 	}
 
-	verbose.Verbose("Opening file", file.Name())
+	verbose.Verbose("opening file", file.Name())
 
 	scanner := bufio.NewScanner(file)
 	scanner.Buffer(make([]byte, 0, 1024*1024), -1)
 
-	lineNum := 0
+	lineNum := 1
 	searchLen := len(search)
 
 	for scanner.Scan() {
 		line := scanner.Text()
 		lineLen := len(line)
 
-		index := boyermoore.Index(line, search)
-		startIndex := 0
+		if line == "" || lineLen < searchLen { // The line cannot have what we're looking for if it's not big enough to contain it
+			continue
+		}
 
-		for index != -1 {
-			isolated := isolate(line, search, 20, index)
+		var index int //boyermoore.Index(line, search)
+		lastIndex := 0
 
-			fmt.Printf("%s%s:%d:%d%s %s\n", file_descriptor_color, path, lineNum, index, reset_color, isolated)
-			foundItems++
+		for {
+			//verbose.Verbose("line", line[startIndex:])
+			index = boyermoore.Index(line[lastIndex:], search)
 
-			startIndex += index + searchLen
-			if startIndex > lineLen {
+			if index == -1 {
+				break
+			}
+
+			index += lastIndex + 1
+
+			if lastIndex > lineLen {
 				break // Reached end of line, move to next line
 			}
 
-			index = boyermoore.Index(line[startIndex:], search)
+			isolated := isolate(line, search, argparse.Config.ContextSize, index-1)
+			fmt.Printf("%s%s:%d:%d%s: %s\n", file_descriptor_color, path, lineNum, index-1, reset_color, isolated)
+			foundItems++
+
+			lastIndex = index
 		}
 
 		// Increment line number after processing the line
@@ -142,46 +166,4 @@ func isolate(inputString string, substring string, contextLength int, startIndex
 	}
 
 	return output
-}
-
-func max(a int, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func min(a int, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func ansiSupported() bool {
-	// Check using tput if available
-	if _, err := exec.LookPath("tput"); err == nil {
-		out, err := exec.Command("tput", "colors").Output()
-		if err == nil {
-			var numColors int // Declare numColors here
-
-			_, err := fmt.Sscanln(string(out), &numColors)
-
-			if err == nil && numColors >= 8 {
-				return true
-			}
-		}
-	}
-
-	// Direct console query (ensure CSI is defined)
-	const csi = "\033["
-	fmt.Print(csi + "c")
-	reader := bufio.NewReader(os.Stdin)
-	ansiReport, err := reader.ReadString('c')
-
-	if err != nil {
-		return false
-	}
-
-	return strings.TrimSpace(ansiReport) != ""
 }

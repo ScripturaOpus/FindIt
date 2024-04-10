@@ -17,6 +17,13 @@ func Verbose(prefix string, in string) string {
 	return in
 }
 
+func VerboseAny(prefix string, in any) {
+	if argparse.Config.Verbose {
+		caller := CallerName(1)
+		fmt.Printf("[%s] %s: `%v`\n", caller, prefix, in)
+	}
+}
+
 func CallerName(skip int) string {
 
 	// Being someone who comes from C#, if feels weird being able to use
