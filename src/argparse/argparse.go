@@ -24,12 +24,12 @@ type options struct {
 
 	/* Debugging */
 	Verbose bool `arg:"--verbose" default:"false"`
-
-	/* Other */
-	ColorEnabled bool
 }
 
 var Config options
+
+/* Other */
+var ColorEnabled bool
 
 func (options) Version() string {
 	if Config.SearchString == "" {

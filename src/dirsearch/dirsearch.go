@@ -27,18 +27,18 @@ func StartSearch() uint64 {
 			reset_color = ""
 			search_pattern_color = ""
 		} else {
-			argparse.Config.ColorEnabled = true
+			argparse.ColorEnabled = true
 		}
 
 	case "always":
 		// Do nothing; Color is already setup
-		argparse.Config.ColorEnabled = true
+		argparse.ColorEnabled = true
 
 	case "never":
 		file_descriptor_color = ""
 		reset_color = ""
 		search_pattern_color = ""
-		argparse.Config.ColorEnabled = false
+		argparse.ColorEnabled = false
 
 	default:
 		fmt.Printf("Unknown color setting '%s'\n", argparse.Config.ColorMode)
@@ -159,7 +159,7 @@ func isolate(inputString string, substring string, contextLength int, startIndex
 	// Replace substring with search pattern color codes (if enabled)
 	output := inputString[adjustedStartIndex:endIndex]
 
-	if argparse.Config.ColorEnabled {
+	if argparse.ColorEnabled {
 		output = inputString[adjustedStartIndex:startIndex]
 		output += search_pattern_color + substring + reset_color
 		output += inputString[startIndex+len(substring) : endIndex]
