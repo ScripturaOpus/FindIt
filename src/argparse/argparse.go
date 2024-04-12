@@ -43,4 +43,8 @@ func ParseArgs() {
 	_ = arg.MustParse(&Config)
 
 	if Config.SearchString == "" {
-		// It's dumb that I even have to do this for help i
+		// It's dumb that I even have to do this for help info
+		os.Args = []string{"", "--help"}
+		arg.MustParse(&Config)
+	}
+}
