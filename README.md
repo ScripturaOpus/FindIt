@@ -66,7 +66,7 @@ $ findit --help
 
 ```bash
 git clone https://github.com/ScripturaOpus/FindIt.git
-cd FindIt
+cd `FindIt`
 make
 ```
 
